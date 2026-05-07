@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학교생활기록부 글자 수 계산기 (2026학년도 기준)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#F0F4F8; --surface:#FFFFFF;
+  --navy:#1A2744; --navy2:#243560;
+  --teal:#0E7C86; --teal2:#12A3B0;
+  --gold:#D48B2E; --green:#1C7C45; --lgreen:#E6F7EE;
+  --yellow:#B87820; --lyellow:#FFF8E6;
+  --red:#C0282A; --lred:#FDEAEA;
+  --gray1:#F0F4F8; --gray2:#E2E8F0; --gray3:#CBD5E1;
+  --gray4:#94A3B8; --gray5:#64748B;
+  --text:#1E293B; --subtext:#475569; --border:#E2E8F0;
+  --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px 16px 60px}
+
+.header{max-width:920px;margin:0 auto 18px;text-align:center}
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--navy);color:#fff;font-size:11px;font-weight:600;padding:5px 14px;border-radius:20px;margin-bottom:12px;letter-spacing:.5px}
+.header h1{font-size:clamp(17px,3.5vw,25px);font-weight:700;color:var(--navy);margin-bottom:6px}
+.header .sub{font-size:12.5px;color:var(--gray5);line-height:1.65}
+
+.year-wrap{max-width:920px;margin:0 auto 14px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.ytab{font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:600;padding:8px 16px;border-radius:20px;border:2px solid var(--border);background:var(--surface);color:var(--gray5);cursor:pointer;transition:all .2s;line-height:1.55;text-align:center}
+.ytab:hover{border-color:var(--teal2);color:var(--teal)}
+.ytab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.ytab .tag{display:inline-block;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px}
+
+.alert-box{max-width:920px;margin:0 auto 14px;border-radius:var(--radius);padding:13px 16px;font-size:12.5px;line-height:1.8;border-width:1.5px;border-style:solid;display:none}
+.alert-box.show{display:block}
+.alert-box.red{background:#FFF0F0;border-color:#F5A0A0;color:#5A0000}
+.alert-box.yellow{background:var(--lyellow);border-color:#F0D080;color:#6B4A00}
+.dchip{display:inline-flex;align-items:center;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;margin:0 2px}
+.dchip.ok{background:var(--green)}
+
+.info-strip{max-width:920px;margin:0 auto 18px;background:var(--navy);border-radius:var(--radius);padding:12px 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.info-item{text-align:center}
+.info-item .lbl{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:.5px;margin-bottom:2px}
+.info-item .val{font-size:15px;color:#fff;font-weight:700}
+
+.wrapper{max-width:920px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+
+.card{background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 10px rgba(0,0,0,.07);border:1px solid var(--border)}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;gap:10px}
+.card-hdr.c1{background:var(--navy)}.card-hdr.c2{background:var(--teal)}.card-hdr.c3{background:#334155}
+.card-hdr h2{font-size:14px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+.card-hdr h2 .ico{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.card-total{font-size:11px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.12);padding:4px 10px;border-radius:10px;white-space:nowrap}
+
+.item-row{border-bottom:1px solid var(--border);padding:13px 16px;animation:fadeIn .18s ease}
+.item-row:last-child{border-bottom:none}
+.item-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;gap:10px;flex-wrap:wrap}
+.lbl-group{display:flex;align-items:center;gap:7px;flex:1;flex-wrap:wrap}
+.sublabel{font-size:12px;font-weight:600;color:var(--teal);background:#E6F7FA;padding:3px 10px;border-radius:8px;white-space:nowrap}
+.sublabel.editable{cursor:pointer;outline:none;min-width:50px;max-width:180px;border:1.5px dashed transparent;transition:border-color .15s}
+.sublabel.editable:hover{border-color:var(--teal2)}.sublabel.editable:focus{border-color:var(--teal);background:#D0F0F5}
+.chg-badge{font-size:10px;font-weight:700;color:var(--red);background:var(--lred);padding:2px 7px;border-radius:5px;white-space:nowrap}
+.note-txt{font-size:10.5px;color:var(--gray5);font-style:italic}
+.stats{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.sch{font-size:12px;display:flex;align-items:center;gap:3px}
+.sch .sl{color:var(--gray5)}.sch .sv{font-weight:700;color:var(--navy)}
+.sch .sv.warn{color:var(--yellow)}.sch .sv.over{color:var(--red)}.sch .sv.good{color:var(--green)}
+.sdiv{color:var(--gray3);font-size:10px}
+.maxb{font-size:11px;font-weight:600;color:var(--gray5);background:var(--gray2);padding:2px 8px;border-radius:8px;white-space:nowrap}
+
+textarea{width:100%;font-family:'Noto Sans KR',sans-serif;font-size:13.5px;line-height:1.75;color:var(--text);background:var(--gray1);border:1.5px solid var(--border);border-radius:8px;padding:11px 13px;resize:vertical;min-height:90px;transition:border-color .2s,background .2s,box-shadow .2s;outline:none}
+textarea:focus{background:#fff;border-color:var(--teal2);box-shadow:0 0 0 3px rgba(14,124,134,.1)}
+textarea.warn{border-color:var(--yellow);background:#FFFEF5}
+textarea.over{border-color:var(--red);background:#FFF8F8}
+
+.prog-wrap{margin-top:7px}
+.prog-track{height:5px;background:var(--gray2);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .3s,background .3s;background:var(--green)}
+.prog-fill.warn{background:var(--yellow)}.prog-fill.over{background:var(--red)}
+.prog-labels{display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--gray4)}
+.prog-labels .rem{font-weight:600}
+.rem.warn{color:var(--yellow)}.rem.over{color:var(--red)}.rem.good{color:var(--green)}
+
+.row-acts{display:flex;gap:5px;margin-top:7px;justify-content:flex-end}
+.bsm{font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:600;padding:4px 9px;border-radius:6px;border:1px solid var(--border);cursor:pointer;background:var(--surface);color:var(--gray5);transition:all .15s}
+.bsm:hover{background:var(--gray2);color:var(--navy)}
+.bsm.del{color:var(--red);border-color:#FACACA}.bsm.del:hover{background:var(--lred)}
+
+.add-row{padding:11px 16px;display:flex;justify-content:center;border-top:1px dashed var(--border)}
+.badd{font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:7px 18px;border-radius:8px;border:1.5px dashed var(--teal2);color:var(--teal);background:rgba(14,124,134,.04);cursor:pointer;transition:all .15s}
+.badd:hover{background:rgba(14,124,134,.1);border-style:solid}
+
+.summary{max-width:920px;margin:14px auto 0;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:15px 18px;box-shadow:0 1px 10px rgba(0,0,0,.05)}
+.summary h3{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px}
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px}
+.sum-item{display:flex;align-items:center;justify-content:space-between;background:var(--gray1);border-radius:8px;padding:7px 11px;font-size:12px}
+.sum-item .si-l{color:var(--subtext)}.sum-item .si-v{font-weight:700;color:var(--navy);display:flex;align-items:center;gap:4px}
+.dot{width:8px;height:8px;border-radius:50%}.dot.good{background:var(--green)}.dot.warn{background:var(--yellow)}.dot.over{background:var(--red)}
+
+.ctrls{max-width:920px;margin:16px auto 0;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.bctrl{font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:600;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;transition:all .2s}
+.bctrl.navy{background:var(--navy);color:#fff}.bctrl.navy:hover{background:var(--navy2);transform:translateY(-1px)}
+.bctrl.sec{background:var(--surface);color:var(--navy);border:1.5px solid var(--border)}.bctrl.sec:hover{background:var(--gray2)}
+.bctrl.teal{background:var(--teal);color:#fff}.bctrl.teal:hover{background:var(--teal2);transform:translateY(-1px)}
+
+.ref-wrap{max-width:920px;margin:16px auto 0}
+.ref-wrap h3{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.ref-tbl{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 10px rgba(0,0,0,.06);border:1px solid var(--border);font-size:12.5px}
+.ref-tbl thead tr{background:var(--navy)}
+.ref-tbl thead th{color:#fff;font-weight:600;padding:11px 12px;text-align:center;border-right:1px solid rgba(255,255,255,.1);font-size:12px}
+.ref-tbl thead th:last-child{border-right:none}
+.ref-tbl tbody td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--gray2);border-right:1px solid var(--gray2)}
+.ref-tbl tbody td:last-child{border-right:none}
+.ref-tbl tbody tr:last-child td{border-bottom:none}
+.ref-tbl tbody td.lbl{text-align:left;font-weight:600;color:var(--navy);background:var(--gray1);font-size:12px}
+.ref-tbl tbody td.chgd{background:var(--lred);color:var(--red);font-weight:700}
+.ref-tbl tbody td.same{color:var(--gray5)}.ref-tbl tbody td.ok{background:var(--lgreen);color:var(--green);font-weight:600}
+.src-note{font-size:10.5px;color:var(--gray5);margin-top:7px;line-height:1.7}
+
+.fnote{max-width:920px;margin:14px auto 0;background:var(--lyellow);border:1px solid #F0D080;border-radius:var(--radius);padding:12px 16px;font-size:12px;color:#6B4A00;line-height:1.75}
+.fnote strong{color:#5A3A00}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-3px)}40%,80%{transform:translateX(3px)}}
+.shake{animation:shake .3s ease}
+@media(max-width:600px){.info-strip{grid-template-columns:repeat(3,1fr)}}
+@media print{.ctrls,.badd,.bsm,.add-row,.year-wrap,.alert-box,.ref-wrap,.manual-wrap{display:none!important}.card{box-shadow:none;border:1px solid #ccc;break-inside:avoid;margin-bottom:10px}textarea{min-height:60px;border:1px solid #ddd;background:#f9f9f9}}
+
+/* ── MANUAL ── */
+.manual-wrap{max-width:920px;margin:0 auto 16px}
+.manual-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:13px 18px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .2s}
+.manual-toggle:hover{background:#F5F8FF;border-color:var(--teal2)}
+.manual-toggle.open{border-color:var(--teal);border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:none}
+.manual-toggle-left{display:flex;align-items:center;gap:10px}
+.manual-toggle-icon{width:30px;height:30px;border-radius:8px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.manual-toggle-title{font-size:14px;font-weight:700;color:var(--navy)}
+.manual-toggle-sub{font-size:11.5px;color:var(--gray5);margin-top:1px}
+.manual-toggle-arrow{font-size:18px;color:var(--gray4);transition:transform .25s;flex-shrink:0}
+.manual-toggle.open .manual-toggle-arrow{transform:rotate(180deg);color:var(--teal)}
+.manual-body{background:var(--surface);border:1.5px solid var(--teal);border-top:none;border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius);overflow:hidden;max-height:0;transition:max-height .35s ease}
+.manual-body.open{max-height:3000px}
+.manual-inner{padding:22px 22px 24px}
+
+/* manual content */
+.m-section{margin-bottom:22px}
+.m-section:last-child{margin-bottom:0}
+.m-heading{font-size:13px;font-weight:700;color:var(--navy);padding:7px 12px;background:var(--gray1);border-left:3px solid var(--teal);border-radius:0 6px 6px 0;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.m-list{display:flex;flex-direction:column;gap:7px;padding-left:2px}
+.m-item{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.7;color:var(--text)}
+.m-item .mi-num{min-width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.m-item .mi-dot{min-width:6px;height:6px;border-radius:50%;background:var(--teal);margin-top:7px;flex-shrink:0}
+.m-item .mi-body strong{color:var(--navy);font-weight:700}
+.m-item .mi-body .mi-sub{font-size:11.5px;color:var(--gray5);margin-top:2px;line-height:1.6}
+
+.m-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+.m-table th{background:var(--navy);color:#fff;padding:9px 12px;text-align:center;font-weight:600;font-size:12px}
+.m-table td{padding:9px 12px;border-bottom:1px solid var(--gray2);text-align:center;vertical-align:middle}
+.m-table tr:last-child td{border-bottom:none}
+.m-table td.t-lbl{text-align:left;font-weight:600;color:var(--navy);background:var(--gray1)}
+.m-table td.t-red{color:var(--red);font-weight:700;background:var(--lred)}
+.m-table td.t-ok{color:var(--green);font-weight:600;background:var(--lgreen)}
+
+.m-tip{display:flex;gap:10px;align-items:flex-start;background:var(--lyellow);border:1px solid #F0D080;border-radius:8px;padding:11px 14px;font-size:12.5px;color:#6B4A00;line-height:1.7;margin-top:8px}
+.m-tip .tip-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.m-warn{display:flex;gap:10px;align-items:flex-start;background:var(--lred);border:1px solid #F5A0A0;border-radius:8px;padding:11px 14px;font-size:12.5px;color:#5A0000;line-height:1.7;margin-top:8px}
+.m-warn .tip-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.m-steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:4px}
+.m-step{background:var(--gray1);border-radius:10px;padding:13px 14px;border:1px solid var(--border)}
+.m-step .step-num{font-size:11px;font-weight:700;color:var(--teal);margin-bottom:4px;letter-spacing:.5px}
+.m-step .step-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:5px}
+.m-step .step-body{font-size:12px;color:var(--subtext);line-height:1.65}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="badge">📋 NEIS 글자 수 계산기 (2026학년도 기준)</div>
+  <h1>학교생활기록부 입력용 글자 수(바이트) 계산기</h1>
+  <p class="sub">
+    2026학년도 기재요령 기준 (2028~2029대입)<br>
+    출처: 교육부 학교생활기록부 기재요령 참고자료 8 (star.moe.go.kr) &nbsp;|&nbsp; 한글 3바이트 · 영문/숫자 1바이트 · 줄바꿈 2바이트
+  </p>
+</div>
+
+<!-- MANUAL -->
+<div class="manual-wrap">
+  <button class="manual-toggle" id="manualToggle" onclick="toggleManual()">
+    <div class="manual-toggle-left">
+      <div class="manual-toggle-icon">📖</div>
+      <div>
+        <div class="manual-toggle-title">사용 매뉴얼 — 이 계산기, 이렇게 쓰세요</div>
+        <div class="manual-toggle-sub">바이트 계산 원리 · 항목별 글자 수 기준 · 자주 묻는 질문 · 활용 팁</div>
+      </div>
+    </div>
+    <span class="manual-toggle-arrow" id="manualArrow">⌄</span>
+  </button>
+  <div class="manual-body" id="manualBody">
+    <div class="manual-inner">
+
+      <!-- 1. 계산기 개요 -->
+      <div class="m-section">
+        <div class="m-heading">📌 1. 이 계산기란?</div>
+        <div class="m-list">
+          <div class="m-item">
+            <div class="mi-dot"></div>
+            <div class="mi-body">
+              NEIS(나이스) 학교생활기록부 입력 시 실제로 적용되는 <strong>바이트(Byte) 기준</strong>으로 글자 수를 실시간 계산합니다.
+              <div class="mi-sub">네이버 글자수 세기는 한글을 2바이트로 계산하지만, NEIS는 3바이트 기준이라 숫자가 다릅니다.</div>
+            </div>
+          </div>
+          <div class="m-item">
+            <div class="mi-dot"></div>
+            <div class="mi-body">
+              <strong>2025 ↔ 2026학년도 기재요령</strong>을 탭으로 전환하며 각기 다른 글자 수 기준을 적용할 수 있습니다.
+              <div class="mi-sub">2028대입 현 고2: 고1 기록은 2025학년도, 고2 기록은 2026학년도 기준 적용</div>
+            </div>
+          </div>
+          <div class="m-item">
+            <div class="mi-dot"></div>
+            <div class="mi-body">출처: 교육부 학교생활기록부 기재요령 참고자료 8 (star.moe.go.kr)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. NEIS 바이트 계산 원리 -->
+      <div class="m-section">
+        <div class="m-heading">🔢 2. NEIS 바이트 계산 원리</div>
+        <table class="m-table">
+          <thead>
+            <tr><th>문자 종류</th><th>예시</th><th>NEIS 바이트</th><th>일반 포털(EUC-KR)</th><th>차이</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="t-lbl">한글 1글자</td><td>가, 나, 학</td><td class="t-red">3바이트</td><td>2바이트</td><td>+1바이트</td></tr>
+            <tr><td class="t-lbl">영문·숫자·공백</td><td>a, 1, (space)</td><td class="t-ok">1바이트</td><td>1바이트</td><td>동일</td></tr>
+            <tr><td class="t-lbl">줄바꿈 (Enter)</td><td>↵</td><td class="t-red">2바이트</td><td>1~2바이트</td><td>주의 필요</td></tr>
+            <tr><td class="t-lbl">특수문자·한자</td><td>!, ?, 漢</td><td class="t-red">3바이트</td><td>2바이트</td><td>+1바이트</td></tr>
+          </tbody>
+        </table>
+        <div class="m-tip">
+          <span class="tip-icon">💡</span>
+          <div><strong>글자 수(환산)</strong>는 바이트 ÷ 3의 값으로, 모두 한글로 작성했을 때의 참고값입니다. 영문·숫자가 섞이면 실제 글자 수보다 환산값이 낮게 나올 수 있습니다. NEIS 제한은 항상 <strong>바이트</strong>가 기준입니다.</div>
+        </div>
+        <div class="m-warn">
+          <span class="tip-icon">⚠</span>
+          <div>줄바꿈(Enter) 1회 = 2바이트 소모. 불필요한 줄바꿈이 많으면 글자 수가 빨리 줄어듭니다. 문단 구분이 필요 없는 경우 줄바꿈을 줄이세요.</div>
+        </div>
+      </div>
+
+      <!-- 3. 2026 글자 수 기준 -->
+      <div class="m-section">
+        <div class="m-heading">📋 3. 2026학년도 항목별 최대 글자 수 (현재 기준)</div>
+        <table class="m-table">
+          <thead>
+            <tr><th>영역</th><th>세부 항목</th><th>최대 글자 수</th><th>최대 바이트</th><th>2025년 대비</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="t-lbl" rowspan="4">창의적 체험활동</td><td>자율·자치활동</td><td>500자</td><td>1,500B</td><td>유지</td></tr>
+            <tr><td>동아리활동</td><td>500자</td><td>1,500B</td><td>유지</td></tr>
+            <tr><td>진로활동</td><td class="t-red">500자</td><td>1,500B</td><td class="t-red">700→500 ↓</td></tr>
+            <tr><td>봉사활동</td><td class="t-red">50자</td><td>150B</td><td class="t-red">250→50 ↓↓</td></tr>
+            <tr><td class="t-lbl">행동특성 및 종합의견</td><td>종합의견</td><td class="t-red">300자</td><td>900B</td><td class="t-red">500→300 ↓</td></tr>
+            <tr><td class="t-lbl" rowspan="2">세부능력 및 특기사항</td><td>공통과목 (1·2학기 합산)</td><td>500자</td><td>1,500B</td><td>합산 방식 유지</td></tr>
+            <tr><td>선택과목 (과목별)</td><td>500자</td><td>1,500B</td><td>유지</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 4. 사용 방법 -->
+      <div class="m-section">
+        <div class="m-heading">🖊 4. 단계별 사용 방법</div>
+        <div class="m-steps">
+          <div class="m-step">
+            <div class="step-num">STEP 01</div>
+            <div class="step-title">학년도 탭 선택</div>
+            <div class="step-body">상단 탭에서 기재요령 연도를 선택합니다. 현재 고2는 고1 기록→2025년, 고2 기록→2026년 탭 사용.</div>
+          </div>
+          <div class="m-step">
+            <div class="step-num">STEP 02</div>
+            <div class="step-title">내용 입력</div>
+            <div class="step-body">각 항목의 텍스트 박스에 작성할 내용을 직접 입력하거나 붙여넣습니다.</div>
+          </div>
+          <div class="m-step">
+            <div class="step-num">STEP 03</div>
+            <div class="step-title">실시간 확인</div>
+            <div class="step-body">입력과 동시에 바이트·글자수·진행바가 자동 업데이트됩니다. 80% 이상→노랑, 초과→빨강 표시.</div>
+          </div>
+          <div class="m-step">
+            <div class="step-num">STEP 04</div>
+            <div class="step-title">과목 추가/삭제</div>
+            <div class="step-body">세특은 '+ 과목 추가' 버튼으로 과목을 추가하고, 과목명을 클릭하면 직접 수정할 수 있습니다.</div>
+          </div>
+          <div class="m-step">
+            <div class="step-num">STEP 05</div>
+            <div class="step-title">복사 및 저장</div>
+            <div class="step-body">항목별 📋 복사 버튼이나 하단 '전체 내용 복사' 버튼으로 NEIS에 붙여넣기 할 수 있습니다.</div>
+          </div>
+          <div class="m-step">
+            <div class="step-num">STEP 06</div>
+            <div class="step-title">인쇄 / PDF</div>
+            <div class="step-body">'🖨 인쇄/PDF' 버튼으로 입력 내용을 깔끔하게 출력하거나 PDF로 저장할 수 있습니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. 색상 의미 -->
+      <div class="m-section">
+        <div class="m-heading">🎨 5. 색상 표시 의미</div>
+        <div class="m-list">
+          <div class="m-item">
+            <div class="mi-dot" style="background:var(--green)"></div>
+            <div class="mi-body"><strong style="color:var(--green)">초록색</strong> — 정상 범위 (80% 미만). 여유롭게 작성 중입니다.</div>
+          </div>
+          <div class="m-item">
+            <div class="mi-dot" style="background:var(--yellow)"></div>
+            <div class="mi-body"><strong style="color:var(--yellow)">노랑색</strong> — 주의 구간 (80~100%). 내용 검토 후 필요 시 줄이세요.</div>
+          </div>
+          <div class="m-item">
+            <div class="mi-dot" style="background:var(--red)"></div>
+            <div class="mi-body"><strong style="color:var(--red)">빨강색</strong> — 초과 (100% 초과). NEIS 입력 시 오류가 발생합니다. 반드시 수정하세요.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. FAQ -->
+      <div class="m-section">
+        <div class="m-heading">❓ 6. 자주 묻는 질문 (FAQ)</div>
+        <div class="m-list">
+          <div class="m-item">
+            <div class="mi-num">Q</div>
+            <div class="mi-body">
+              <strong>네이버 글자수 세기로 500자인데 왜 NEIS에서 초과가 뜨나요?</strong>
+              <div class="mi-sub">네이버는 한글을 2바이트로 계산하지만 NEIS는 3바이트입니다. 한글 500자 = NEIS 1,500바이트 = 네이버 1,000바이트로 계산됩니다. 이 계산기를 사용하면 정확한 NEIS 기준값을 확인할 수 있습니다.</div>
+            </div>
+          </div>
+          <div class="m-item">
+            <div class="mi-num">Q</div>
+            <div class="mi-body">
+              <strong>봉사활동이 왜 50자밖에 안 되나요?</strong>
+              <div class="mi-sub">2026학년도 기재요령부터 봉사활동 활동내용이 250자→50자로 대폭 축소되었습니다 (교육부 기재요령 참고자료 8). 핵심 내용만 간결하게 기재해야 합니다.</div>
+            </div>
+          </div>
+          <div class="m-item">
+            <div class="mi-num">Q</div>
+            <div class="mi-body">
+              <strong>공통과목 세특은 어떻게 입력하나요?</strong>
+              <div class="mi-sub">공통국어1·2, 공통수학1·2, 공통영어1·2 등 공통과목은 1·2학기 합산 500자(1,500바이트)가 상한입니다. 1학기에 250자, 2학기에 250자씩 나눠 입력하거나 자유롭게 배분하되 합산이 500자를 넘지 않아야 합니다.</div>
+            </div>
+          </div>
+          <div class="m-item">
+            <div class="mi-num">Q</div>
+            <div class="mi-body">
+              <strong>입력 내용이 저장되나요?</strong>
+              <div class="mi-sub">현재 버전은 브라우저 세션 내에서만 유지됩니다. 창을 닫으면 내용이 사라집니다. 작성 후 반드시 📋 복사 버튼으로 내용을 저장하거나 🖨 인쇄/PDF로 보관하세요.</div>
+            </div>
+          </div>
+          <div class="m-item">
+            <div class="mi-num">Q</div>
+            <div class="mi-body">
+              <strong>현재 고2 학생은 어떤 탭을 써야 하나요?</strong>
+              <div class="mi-sub">현재 고2(2028대입)는 고1 때 기록과 고2 때 기록이 기준이 다릅니다. 고1 때(2025학년도) 입력한 내용 확인 → 2025년 탭, 현재 고2로 새로 입력하는 내용 → 2026년 탭을 사용하세요.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. 팁 -->
+      <div class="m-section">
+        <div class="m-heading">✨ 7. 효율적인 학생부 작성 팁</div>
+        <div class="m-list">
+          <div class="m-item">
+            <div class="mi-dot"></div>
+            <div class="mi-body"><strong>핵심 역량 중심으로</strong> 단순 활동 나열보다 '탐구 동기→과정→배움→성장'의 흐름으로 서술하세요.</div>
+          </div>
+          <div class="m-item">
+            <div class="mi-dot"></div>
+            <div class="mi-body"><strong>글자 수가 줄었다고 내용도 줄지 않습니다.</strong> 2026학년도부터 행동특성 300자, 진로 500자지만 핵심만 간결하게 쓰면 더 인상 깊습니다.</div>
+          </div>
+          <div class="m-item">
+            <div class="mi-dot"></div>
+            <div class="mi-body"><strong>영문/숫자를 활용</strong>하면 한글보다 바이트를 적게 씁니다. 예: '인공지능(AI)', '3단계 실험' 등.</div>
+          </div>
+          <div class="m-item">
+            <div class="mi-dot"></div>
+            <div class="mi-body"><strong>AI 생성 문장 금지</strong> — 2026학년도부터 ChatGPT 등 생성형 AI로 작성한 문장 활용이 공식 금지되었습니다.</div>
+          </div>
+          <div class="m-item">
+            <div class="mi-dot"></div>
+            <div class="mi-body">이 계산기에서 작성한 내용을 <strong>📋 복사 → NEIS 붙여넣기</strong>하면 글자 수를 맞추며 입력할 수 있어 편리합니다.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /manual-inner -->
+  </div><!-- /manual-body -->
+</div><!-- /manual-wrap -->
+
+<!-- YEAR TABS -->
+<div class="year-wrap">
+  <button class="ytab" id="t2025" onclick="setYear('2025')">
+    2025학년도<br><small>2028대입 현 고2의 고1 기록</small>
+  </button>
+  <button class="ytab active" id="t2026" onclick="setYear('2026')">
+    2026학년도<span class="tag">현재</span><br><small>2028대입 현 고2의 고2 · 2029대입 현 고1</small>
+  </button>
+</div>
+
+<!-- ALERT -->
+<div class="alert-box" id="alertBox"></div>
+
+<!-- STRIP -->
+<div class="info-strip">
+  <div class="info-item"><div class="lbl">전체 항목</div><div class="val" id="gTotal">0개</div></div>
+  <div class="info-item"><div class="lbl">입력 완료</div><div class="val" id="gFilled">0개</div></div>
+  <div class="info-item"><div class="lbl">초과 항목</div><div class="val" id="gOver" style="color:#F87171">0개</div></div>
+</div>
+
+<!-- MAIN -->
+<div class="wrapper">
+
+  <div class="card">
+    <div class="card-hdr c1">
+      <h2><span class="ico">🎨</span>창의적체험활동상황</h2>
+      <span class="card-total" id="cca-tot">0 / 0 B</span>
+    </div>
+    <div id="cca-rows"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr c2">
+      <h2><span class="ico">💬</span>행동특성 및 종합의견</h2>
+      <span class="card-total" id="beh-tot">0 / 0 B</span>
+    </div>
+    <div id="beh-rows"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr c3">
+      <h2><span class="ico">📚</span>세부능력 및 특기사항 (세특)</h2>
+      <span class="card-total" id="sub-tot">0 / 0 B</span>
+    </div>
+    <div id="sub-rows"></div>
+    <div class="add-row">
+      <button class="badd" onclick="addSubject()">
+        <span style="font-size:16px;line-height:1">＋</span> 과목 추가하기
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- SUMMARY -->
+<div class="summary">
+  <h3>📊 전체 입력 현황</h3>
+  <div class="sum-grid" id="sumGrid"></div>
+</div>
+
+<!-- CONTROLS -->
+<div class="ctrls">
+  <button class="bctrl sec" onclick="window.print()">🖨 인쇄 / PDF</button>
+  <button class="bctrl sec" onclick="resetAll()">🔄 전체 초기화</button>
+  <button class="bctrl teal" onclick="copyAll()">📋 전체 내용 복사</button>
+</div>
+
+<!-- REFERENCE TABLE -->
+<div class="ref-wrap">
+  <h3>📑 2025 → 2026학년도 영역별 최대 글자 수 변경 비교표</h3>
+  <table class="ref-tbl">
+    <thead>
+      <tr>
+        <th style="text-align:left;width:185px">영역</th>
+        <th style="width:175px">세부 항목</th>
+        <th>2025년</th>
+        <th>2026년 <span style="color:#F87171">●변경</span></th>
+        <th>증감</th>
+        <th>2026년 바이트</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="lbl" rowspan="4">창의적 체험활동</td>
+        <td>자율·자치활동 특기사항</td>
+        <td class="same">500자</td>
+        <td class="ok">500자 (유지)</td>
+        <td class="same">—</td>
+        <td class="same">1,500B</td>
+      </tr>
+      <tr>
+        <td>동아리활동 특기사항</td>
+        <td class="same">500자</td>
+        <td class="ok">500자 (유지)</td>
+        <td class="same">—</td>
+        <td class="same">1,500B</td>
+      </tr>
+      <tr>
+        <td>진로활동 특기사항</td>
+        <td class="same">700자</td>
+        <td class="chgd">500자 ↓</td>
+        <td class="chgd">▼ 200자 축소</td>
+        <td>1,500B</td>
+      </tr>
+      <tr>
+        <td>봉사활동 활동내용</td>
+        <td class="same">250자</td>
+        <td class="chgd">50자 ↓↓</td>
+        <td class="chgd">▼ 200자 대폭 축소</td>
+        <td>150B</td>
+      </tr>
+      <tr>
+        <td class="lbl">행동특성 및 종합의견</td>
+        <td>행동특성 및 종합의견</td>
+        <td class="same">500자</td>
+        <td class="chgd">300자 ↓</td>
+        <td class="chgd">▼ 200자 축소</td>
+        <td>900B</td>
+      </tr>
+      <tr>
+        <td class="lbl">교과학습발달상황</td>
+        <td>과목별 세부능력 및 특기사항</td>
+        <td class="same">과목별 500자</td>
+        <td class="ok">500자 (유지)</td>
+        <td style="font-size:11px;color:var(--red)">공통과목은 1·2학기 합산 500자</td>
+        <td>1,500B</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="src-note">
+    📌 출처: 교육부 「2026학년도 학교생활기록부 기재요령」 참고자료 8 / 학교생활기록부 종합지원포털(star.moe.go.kr) Q&A / 베리타스알파 2026.02.24<br>
+    📌 봉사활동 250자→50자 변경은 2026학년도 기재요령 참고자료8 공식 표에서 확인된 사항입니다.
+  </p>
+</div>
+
+<div class="fnote">
+  <strong>📐 NEIS 바이트 계산 기준</strong> &nbsp;|&nbsp;
+  한글·한자·특수문자 = <strong>3바이트</strong> &nbsp;/&nbsp;
+  영문·숫자·공백·부호 = <strong>1바이트</strong> &nbsp;/&nbsp;
+  줄바꿈(Enter) = <strong>2바이트</strong><br>
+  글자 수(환산) = 바이트 ÷ 3 (참고값). NEIS 실제 제한은 <strong>바이트</strong> 기준.<br>
+  ⚠ 2026학년도 주요 변경: 진로활동 700→500자 / <strong>봉사활동 250→50자 (대폭 축소)</strong> / 행동특성 500→300자
+</div>
+
+<script>
+// ── 매뉴얼 접기/펴기 ─────────────────────────────
+function toggleManual() {
+  const body   = document.getElementById('manualBody');
+  const toggle = document.getElementById('manualToggle');
+  const arrow  = document.getElementById('manualArrow');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  toggle.classList.toggle('open', !isOpen);
+  arrow.textContent = isOpen ? '⌄' : '⌃';
+}
+
+// ── 바이트 계산 ──────────────────────────────────
+function calcBytes(text) {
+  let b = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '\n') b += 2;
+    else if (c.charCodeAt(0) > 127) b += 3;
+    else b += 1;
+  }
+  return b;
+}
+
+// ── 학년도 설정 ──────────────────────────────────
+const CFG = {
+  '2025': {
+    alertCls: 'yellow',
+    alertHtml: `<strong>📌 2025학년도 기재요령</strong> — 2028대입 현 고2 학생의 <u>고1 기록</u> 기준입니다.<br>
+      진로활동 <span class="dchip ok">700자</span> &nbsp; 행동특성 <span class="dchip ok">500자</span> &nbsp; 봉사활동 <span class="dchip ok">250자</span><br>
+      공통과목 세특은 1·2학기 합산 500자 적용.`,
+    창체: [
+      { name: '자율활동',   max: 500 },
+      { name: '동아리활동', max: 500 },
+      { name: '봉사활동',   max: 250, note: '2026학년도부터 50자로 대폭 축소 예정' },
+      { name: '진로활동',   max: 700, changed: '2026학년도부터 500자로 축소' },
+    ],
+    행동: { max: 500, changed: '2026학년도부터 300자로 축소' },
+    세특Note: '공통과목 1·2학기 합산 500자 / 선택과목 과목별 500자',
+  },
+  '2026': {
+    alertCls: 'red',
+    alertHtml: `<strong>🔴 2026학년도 기재요령 — 현재 적용 중</strong> (교육부 기재요령 참고자료 8 기준)<br>
+      진로활동 <span class="dchip">700자 → 500자 ↓</span> &nbsp;
+      봉사활동 <span class="dchip">250자 → 50자 ↓↓ 대폭 축소</span> &nbsp;
+      행동특성 <span class="dchip">500자 → 300자 ↓</span><br>
+      현재 고2(2028대입)의 고2 기록 및 현재 고1(2029대입)에 적용됩니다.`,
+    창체: [
+      { name: '자율·자치활동', max: 500 },
+      { name: '동아리활동', max: 500 },
+      { name: '봉사활동',   max: 50,  changed: '250자 → 50자 대폭 축소' },
+      { name: '진로활동',   max: 500, changed: '700자 → 500자 축소' },
+    ],
+    행동: { max: 300, changed: '500자 → 300자 축소' },
+    세특Note: '공통과목 1·2학기 합산 500자 / 선택과목 과목별 500자',
+  },
+};
+
+let currentYear = '2026';
+let subCnt = 0;
+
+// ── 학년도 변경 ─────────────────────────────────
+function setYear(yr) {
+  currentYear = yr;
+  ['2025','2026'].forEach(y => {
+    document.getElementById('t'+y)?.classList.toggle('active', y===yr);
+  });
+  const cfg = CFG[yr];
+  const ab = document.getElementById('alertBox');
+  ab.innerHTML = cfg.alertHtml;
+  ab.className = 'alert-box show ' + cfg.alertCls;
+  rebuild();
+}
+
+// ── 섹션 재구성 ─────────────────────────────────
+function rebuild() {
+  const cfg = CFG[currentYear];
+
+  // 창체
+  const ccaDiv = document.getElementById('cca-rows');
+  const ccaOld = {};
+  ccaDiv.querySelectorAll('.item-row').forEach(r => {
+    if (r.dataset.key) ccaOld[r.dataset.key] = r.querySelector('textarea').value;
+  });
+  ccaDiv.innerHTML = '';
+  cfg.창체.forEach((it, i) => {
+    const key = 'cca-' + i;
+    const row = makeRow(it.name, it.max, it.changed, it.note, false, key);
+    ccaDiv.appendChild(row);
+    if (ccaOld[key]) { row.querySelector('textarea').value = ccaOld[key]; updateRow(row.querySelector('textarea')); }
+  });
+
+  // 행동특성
+  const behDiv = document.getElementById('beh-rows');
+  const behOld = behDiv.querySelector('textarea')?.value || '';
+  behDiv.innerHTML = '';
+  const brow = makeRow('종합의견', cfg.행동.max, cfg.행동.changed, '', false, 'beh-0');
+  behDiv.appendChild(brow);
+  if (behOld) { brow.querySelector('textarea').value = behOld; updateRow(brow.querySelector('textarea')); }
+
+  // 세특 — 안내 배너 갱신
+  const subDiv = document.getElementById('sub-rows');
+  const oldNote = subDiv.querySelector('.sub-note');
+  const noteEl = document.createElement('div');
+  noteEl.className = 'sub-note';
+  noteEl.style.cssText = 'padding:9px 16px;font-size:12px;color:var(--subtext);background:#F8F9FC;border-bottom:1px dashed var(--border)';
+  noteEl.textContent = '📌 ' + cfg.세특Note;
+  if (oldNote) oldNote.replaceWith(noteEl);
+  else subDiv.insertBefore(noteEl, subDiv.firstChild);
+
+  // 기존 과목행 없으면 기본 생성
+  if (!subDiv.querySelectorAll('.item-row').length) {
+    ['국어','수학','영어'].forEach((nm, i) => {
+      subCnt++;
+      const k = 'sub-' + Date.now() + i;
+      subDiv.appendChild(makeRow(nm, 500, false, '', true, k));
+    });
+  }
+
+  updateAll();
+}
+
+// ── 행 생성 ─────────────────────────────────────
+function makeRow(labelName, maxChars, changed, note, isEdit, key) {
+  const div = document.createElement('div');
+  div.className = 'item-row';
+  div.dataset.max = maxChars;
+  div.dataset.key = key || '';
+  const maxB = maxChars * 3;
+  const chgHtml = changed ? `<span class="chg-badge">⚠ ${changed}</span>` : '';
+  const noteHtml = note ? `<span class="note-txt">${note}</span>` : '';
+  const editAttr = isEdit ? ' contenteditable="true" spellcheck="false" title="클릭하여 과목명 수정" onblur="trimLbl(this)"' : '';
+
+  div.innerHTML = `
+    <div class="item-top">
+      <div class="lbl-group">
+        <span class="sublabel${isEdit?' editable':''}"${editAttr}>${labelName}</span>
+        ${chgHtml}${noteHtml}
+      </div>
+      <div class="stats">
+        <span class="sch"><span class="sl">바이트</span>&nbsp;<span class="sv bytes">0</span></span>
+        <span class="sdiv">·</span>
+        <span class="sch"><span class="sl">글자수</span>&nbsp;<span class="sv chars">0</span></span>
+        <span class="sdiv">·</span>
+        <span class="maxb">최대 ${maxChars}자 (${maxB.toLocaleString()}B)</span>
+      </div>
+    </div>
+    <textarea placeholder="${labelName} 내용을 입력하세요..."
+      rows="${maxChars >= 500 ? 5 : maxChars >= 250 ? 4 : maxChars >= 100 ? 3 : 2}"
+      oninput="updateRow(this)"></textarea>
+    <div class="prog-wrap">
+      <div class="prog-track"><div class="prog-fill" style="width:0%"></div></div>
+      <div class="prog-labels">
+        <span>0%</span>
+        <span class="rem good">${maxChars}자 남음 (${maxB.toLocaleString()}B)</span>
+      </div>
+    </div>
+    <div class="row-acts">
+      <button class="bsm" onclick="copyText(this)">📋 복사</button>
+      <button class="bsm" onclick="clearRow(this)">🗑 지우기</button>
+      ${isEdit ? '<button class="bsm del" onclick="removeRow(this)">✕ 삭제</button>' : ''}
+    </div>`;
+  return div;
+}
+
+// ── 행 업데이트 ─────────────────────────────────
+function updateRow(ta) {
+  const row = ta.closest('.item-row');
+  const maxC = parseInt(row.dataset.max);
+  const maxB = maxC * 3;
+  const bytes = calcBytes(ta.value);
+  const chars = bytes / 3;
+  const pct = Math.min(bytes / maxB * 100, 100);
+  const isOver = bytes > maxB;
+  const isWarn = !isOver && pct >= 80;
+
+  row.querySelector('.bytes').textContent = bytes.toLocaleString();
+  const cEl = row.querySelector('.chars');
+  cEl.textContent = Number.isInteger(chars) ? chars : chars.toFixed(1);
+  [row.querySelector('.bytes'), cEl].forEach(e => {
+    e.className = 'sv ' + (isOver ? 'over' : isWarn ? 'warn' : 'good');
+  });
+  ta.className = isOver ? 'over' : isWarn ? 'warn' : '';
+
+  const fill = row.querySelector('.prog-fill');
+  fill.style.width = pct + '%';
+  fill.className = 'prog-fill ' + (isOver ? 'over' : isWarn ? 'warn' : '');
+
+  const [pLbl, rLbl] = row.querySelectorAll('.prog-labels span');
+  pLbl.textContent = pct.toFixed(1) + '%';
+  const remB = maxB - bytes;
+  const remC = Math.ceil(maxC - chars);
+  if (isOver) {
+    rLbl.textContent = Math.abs(remB).toLocaleString() + 'B 초과!';
+    rLbl.className = 'rem over';
+  } else if (remB <= 0) {
+    rLbl.textContent = '꽉 찼습니다';
+    rLbl.className = 'rem over';
+  } else {
+    rLbl.textContent = `${remC}자 남음 (${remB.toLocaleString()}B)`;
+    rLbl.className = 'rem ' + (isWarn ? 'warn' : 'good');
+  }
+
+  if (isOver && !ta._wasOver) { ta.classList.add('shake'); setTimeout(() => ta.classList.remove('shake'), 300); }
+  ta._wasOver = isOver;
+
+  updateAll();
+}
+
+// ── 전체 요약 업데이트 ───────────────────────────
+function updateAll() {
+  const calcSection = (selector, totId) => {
+    let b = 0, maxB = 0;
+    document.querySelectorAll(selector + ' .item-row').forEach(r => {
+      b += calcBytes(r.querySelector('textarea').value);
+      maxB += parseInt(r.dataset.max) * 3;
+    });
+    document.getElementById(totId).textContent = `${b.toLocaleString()} / ${maxB.toLocaleString()} B`;
+  };
+  calcSection('#cca-rows', 'cca-tot');
+  calcSection('#beh-rows', 'beh-tot');
+  calcSection('#sub-rows', 'sub-tot');
+
+  const allRows = document.querySelectorAll('.item-row');
+  let filled = 0, over = 0;
+  const grid = document.getElementById('sumGrid');
+  grid.innerHTML = '';
+
+  allRows.forEach(row => {
+    const ta = row.querySelector('textarea');
+    const maxC = parseInt(row.dataset.max), maxB = maxC * 3;
+    const bytes = calcBytes(ta.value);
+    const lbl = row.querySelector('.sublabel')?.textContent.trim() || '항목';
+    const isOver = bytes > maxB, isWarn = !isOver && bytes / maxB >= 0.8;
+    if (bytes > 0) filled++;
+    if (isOver) over++;
+    const pct = Math.min(bytes / maxB * 100, 100).toFixed(0);
+    const dc = isOver ? 'over' : isWarn ? 'warn' : 'good';
+    const el = document.createElement('div');
+    el.className = 'sum-item';
+    el.innerHTML = `<span class="si-l">${lbl}</span><span class="si-v"><span class="dot ${dc}"></span>${bytes.toLocaleString()} / ${maxB.toLocaleString()}B <span style="color:var(--gray4);font-weight:400">${pct}%</span></span>`;
+    grid.appendChild(el);
+  });
+
+  document.getElementById('gTotal').textContent = allRows.length + '개';
+  document.getElementById('gFilled').textContent = filled + '개';
+  document.getElementById('gOver').textContent = over + '개';
+}
+
+// ── 과목 추가 ────────────────────────────────────
+function addSubject() {
+  subCnt++;
+  const k = 'sub-' + Date.now() + '-' + subCnt;
+  const subDiv = document.getElementById('sub-rows');
+  const row = makeRow('과목 ' + subCnt, 500, false, '', true, k);
+  subDiv.appendChild(row);
+  row.querySelector('textarea').focus();
+  updateAll();
+}
+
+// ── 버튼 동작 ────────────────────────────────────
+function trimLbl(el) { el.textContent = el.textContent.trim() || '(과목명)'; }
+
+function copyText(btn) {
+  const ta = btn.closest('.item-row').querySelector('textarea');
+  if (!ta.value.trim()) { alert('복사할 내용이 없습니다.'); return; }
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const o = btn.textContent;
+    btn.textContent = '✅ 복사됨!'; btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = o; btn.style.color = ''; }, 1500);
+  }).catch(() => { ta.select(); document.execCommand('copy'); });
+}
+
+function clearRow(btn) {
+  const ta = btn.closest('.item-row').querySelector('textarea');
+  if (!ta.value.trim()) return;
+  if (confirm('이 항목의 내용을 지울까요?')) { ta.value = ''; updateRow(ta); }
+}
+
+function removeRow(btn) {
+  const row = btn.closest('.item-row');
+  const lbl = row.querySelector('.sublabel')?.textContent.trim() || '과목';
+  if (confirm(`"${lbl}" 항목을 삭제할까요?`)) { row.remove(); updateAll(); }
+}
+
+function resetAll() {
+  if (!confirm('모든 항목의 내용을 초기화할까요?')) return;
+  document.querySelectorAll('textarea').forEach(ta => { ta.value = ''; updateRow(ta); });
+}
+
+function copyAll() {
+  let res = '';
+  document.querySelectorAll('.item-row').forEach(row => {
+    const lbl = row.querySelector('.sublabel')?.textContent.trim() || '항목';
+    const val = row.querySelector('textarea').value.trim();
+    if (val) res += `[${lbl}]\n${val}\n\n`;
+  });
+  if (!res) { alert('복사할 내용이 없습니다.'); return; }
+  navigator.clipboard.writeText(res.trim()).then(() => alert('전체 내용이 복사되었습니다.')).catch(() => {});
+}
+
+// ── 초기 실행 ────────────────────────────────────
+setYear('2026');
+</script>
+</body>
+</html>
